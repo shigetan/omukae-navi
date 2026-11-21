@@ -324,6 +324,69 @@ class TestHearingFallbackAndThreadSafety(unittest.TestCase):
             server._MODEL_COOLDOWN_UNTIL.update(orig_cooldown)
 
 
+class TestInputHardeningAndEdgeCases(unittest.TestCase):
+    """非文字列・異常型ペイロードに対するAPI境界防御のテスト"""
+
+    def test_analyze_photo_rejects_non_string_image_and_coerces_note(self):
+        with self.assertRaises(ValueError):
+            server.analyze_photo_with_gemini("k", {"imageDataUrl": 123})
+
+        with mock.patch(
+            "server.call_gemini_json",
+            return_value=({"status": "safe", "score": 90}, "gemini-2.0-flash"),
+        ):
+            res = server.analyze_photo_with_gemini(
+                "k",
+                {"imageDataUrl": "data:image/jpeg;base64,AAAA", "note": 123, "areaId": None},
+            )
+        self.assertEqual(res["status"], "safe")
+        self.assertEqual(res["model"], "gemini-2.0-flash")
+
+    def test_hearing_chat_handles_malformed_list_and_items(self):
+        with mock.patch(
+            "server.call_gemini_json",
+            return_value=({"reply": "質問1です", "answeredCount": 0}, "gemini-2.0-flash"),
+        ):
+            res = server.hearing_chat_with_gemini(
+                "k",
+                {
+                    "messages": ["not-a-dict", {"role": "user", "text": "持ち家です"}],
+                    "photoSummaries": [None, 42],
+                },
+            )
+            self.assertEqual(res["reply"], "質問1です")
+
+            res2 = server.hearing_chat_with_gemini(
+                "k",
+                {"messages": "invalid", "photoSummaries": "invalid"},
+            )
+            self.assertEqual(res2["reply"], "質問1です")
+
+    def test_generate_report_handles_malformed_types(self):
+        with mock.patch(
+            "server.call_gemini_json",
+            return_value=({"overallReadiness": "ready"}, "gemini-2.0-flash"),
+        ):
+            res = server.generate_report_with_gemini(
+                "k",
+                {
+                    "applicantName": 999,
+                    "photoResults": "bad",
+                    "hearingSummary": [],
+                    "hearingMessages": "bad",
+                },
+            )
+        self.assertEqual(res["overallReadiness"], "ready")
+
+    def test_request_gemini_once_handles_null_content(self):
+        with mock.patch(
+            "server.http_json",
+            return_value={"candidates": [{"content": None}]},
+        ):
+            with self.assertRaises(RuntimeError):
+                server._request_gemini_once("k", "gemini-2.0-flash", [{"text": "hi"}], "sys", 0.3)
+
+
 class TestFrontendAndRepoHygiene(unittest.TestCase):
     """フロントエンドJS/HTMLの静的検証と機密情報チェック"""
 
@@ -342,6 +405,8 @@ class TestFrontendAndRepoHygiene(unittest.TestCase):
             "getDemoAreaData",
             "getDemoHearingStep",
             "buildDynamicDemoReport",
+            "SAMPLE_PREVIEW_REPORT_DOG",
+            "getSamplePreviewReport",
             "sampleCheckedShopping",
             "getShoppingItemKey",
             "renderSingleArea",
@@ -351,6 +416,9 @@ class TestFrontendAndRepoHygiene(unittest.TestCase):
             "getFullYear()",
             "answeredCount: state.hearingAnswered",
             "hearingSummary: state.hearingSummary",
+            "if (state.hearingLoading) return;",
+            "if (stepNum !== 4)",
+            'p.loading ? "disabled" : ""',
         ]
         for token in required_tokens:
             self.assertIn(token, js, msg=f"Expected symbol {token!r} missing in public/app.js")

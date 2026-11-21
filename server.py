@@ -467,10 +467,14 @@ def _request_gemini_once(api_key, model, parts, system_instruction, temperature,
         else:
             raise
     candidates = res.get("candidates", [])
-    if not candidates:
+    if not isinstance(candidates, list) or not candidates:
         raise RuntimeError("AIから有効な応答が返されませんでした。")
-    out_parts = candidates[0].get("content", {}).get("parts", [])
-    text = "".join(p.get("text", "") for p in out_parts if "text" in p)
+    first_cand = candidates[0] if isinstance(candidates[0], dict) else {}
+    content_obj = first_cand.get("content")
+    out_parts = content_obj.get("parts", []) if isinstance(content_obj, dict) else []
+    if not isinstance(out_parts, list):
+        out_parts = []
+    text = "".join(str(p.get("text", "")) for p in out_parts if isinstance(p, dict) and "text" in p)
     if not text:
         raise RuntimeError("AIの応答テキストが空でした。")
     return extract_json_text(text)
@@ -536,12 +540,14 @@ def call_gemini_json(api_key, parts, system_instruction, temperature=0.3, model_
 
 
 def analyze_photo_with_gemini(api_key, body):
-    image_data_url = body.get("imageDataUrl", "")
-    area_id = body.get("areaId", "living")
-    pet_type = body.get("petType", "cat")
-    preset_id = body.get("shelterPreset", "standard")
+    image_data_url = body.get("imageDataUrl")
+    if not isinstance(image_data_url, str):
+        raise ValueError("画像データの形式が正しくありません。")
+    area_id = str(body.get("areaId") or "living").strip() or "living"
+    pet_type = str(body.get("petType") or "cat").strip() or "cat"
+    preset_id = str(body.get("shelterPreset") or "standard").strip() or "standard"
     has_resident_pet = bool(body.get("hasResidentPet", False))
-    user_note = (body.get("note") or "").strip()
+    user_note = str(body.get("note") or "").strip()
 
     match = re.match(r"^data:(image/[a-zA-Z0-9.+-]+);base64,(.+)$", image_data_url, re.DOTALL)
     if not match:
@@ -726,11 +732,17 @@ def build_hearing_fallback_reply(messages, current_answered=None, current_summar
 
 
 def hearing_chat_with_gemini(api_key, body):
-    pet_type = body.get("petType", "cat")
-    preset_id = body.get("shelterPreset", "standard")
+    pet_type = str(body.get("petType") or "cat").strip() or "cat"
+    preset_id = str(body.get("shelterPreset") or "standard").strip() or "standard"
     has_resident_pet = bool(body.get("hasResidentPet", False))
-    messages = body.get("messages", [])
-    photo_summaries = body.get("photoSummaries", [])
+    raw_messages = body.get("messages")
+    messages = [m for m in raw_messages if isinstance(m, dict)] if isinstance(raw_messages, list) else []
+    raw_photos = body.get("photoSummaries")
+    photo_summaries = (
+        [str(s).strip() for s in raw_photos if s is not None and str(s).strip()]
+        if isinstance(raw_photos, list)
+        else []
+    )
     current_answered = body.get("answeredCount")
     current_summary = body.get("hearingSummary")
 
@@ -745,7 +757,7 @@ def hearing_chat_with_gemini(api_key, body):
     )
 
     history_text = "\n".join(
-        f"{'応募者' if m.get('role') == 'user' else 'AI'}: {m.get('text', '')}"
+        f"{'応募者' if m.get('role') == 'user' else 'AI'}: {str(m.get('text') or '')}"
         for m in messages
     )
     photo_text = "\n".join(f"- {s}" for s in photo_summaries) if photo_summaries else "まだ写真診断は未実施"
@@ -811,13 +823,14 @@ def hearing_chat_with_gemini(api_key, body):
 
 
 def generate_report_with_gemini(api_key, body):
-    applicant_name = (body.get("applicantName") or "応募者").strip()
-    pet_type = body.get("petType", "cat")
-    preset_id = body.get("shelterPreset", "standard")
+    applicant_name = str(body.get("applicantName") or "応募者").strip() or "応募者"
+    pet_type = str(body.get("petType") or "cat").strip() or "cat"
+    preset_id = str(body.get("shelterPreset") or "standard").strip() or "standard"
     has_resident_pet = bool(body.get("hasResidentPet", False))
-    photo_results = body.get("photoResults", {})
-    hearing_summary = body.get("hearingSummary", {})
-    hearing_messages = body.get("hearingMessages", [])
+    photo_results = body.get("photoResults") if isinstance(body.get("photoResults"), dict) else {}
+    hearing_summary = body.get("hearingSummary") if isinstance(body.get("hearingSummary"), dict) else {}
+    raw_messages = body.get("hearingMessages")
+    hearing_messages = raw_messages if isinstance(raw_messages, list) else []
 
     pet_label = PET_LABELS.get(pet_type, "保護猫")
     source_name, _ = describe_adoption_source(preset_id, has_resident_pet)

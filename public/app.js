@@ -338,6 +338,55 @@ const SAMPLE_PREVIEW_REPORT = {
   ]
 };
 
+const SAMPLE_PREVIEW_REPORT_DOG = {
+  overallReadiness: "almost",
+  overallLabel: "あと少しの準備でさらに安心してお迎えできます",
+  overallComment:
+    "飼育サークルを置けるスペースや玄関の二重対策など、大切なポイントがしっかり整っています！窓ロックと観葉植物・床の滑り対策だけお迎え前に整えれば、さらに安心して新しい家族を迎えられます。",
+  staffSummary:
+    "写真およびヒアリング内容から、基本的な飼育スペース・飛び出し防止意識・ご家族の同意が確認できました。玄関は仕切り扉があり良好です。観葉植物の配置見直しと床の滑り対策・窓ロックの予定を確認できれば、現地訪問を省略してオンライン面談へ進める水準です。",
+  recommendedNextStep: "窓・床の対策写真の追加 ＋ 15分程度のオンライン面談で最終確認",
+  priorityActions: [
+    "サッシ用の補助ロックを付け、換気時の飛び出しを防ぐ",
+    "観葉植物を犬の届かない場所へ移動し、電源コードをカバーで保護する",
+    "フローリングでよく走る場所へ滑り止めクッションマットを敷く"
+  ],
+  shoppingList: [
+    {
+      item: "サッシ用 補助ロック（窓ロック）",
+      where: "ホームセンター",
+      estimatedPrice: "約500〜900円",
+      priority: "優先",
+      note: "窓からの不意の飛び出し防止としてお迎え前に設置"
+    },
+    {
+      item: "スパイラルチューブ（配線保護カバー）",
+      where: "100円ショップ",
+      estimatedPrice: "約110〜220円",
+      priority: "優先",
+      note: "リビングのテレビ裏や電源コードのかじり対策に"
+    },
+    {
+      item: "滑り止めクッションマット・ジョイントマット",
+      where: "100円ショップ・ホームセンター",
+      estimatedPrice: "約550〜2,000円",
+      priority: "優先",
+      note: "フローリングでの足腰・関節の負担軽減に"
+    },
+    {
+      item: "ハードタイプのキャリーケース／クレート",
+      where: "ペットショップ・通販",
+      estimatedPrice: "約3,000〜5,500円",
+      priority: "あると安心",
+      note: "お迎え当日や動物病院への通院・災害時の移動用に"
+    }
+  ]
+};
+
+function getSamplePreviewReport(petType = state.petType) {
+  return petType === "dog" ? SAMPLE_PREVIEW_REPORT_DOG : SAMPLE_PREVIEW_REPORT;
+}
+
 const state = {
   step: 1,
   apiKeyConfigured: false,
@@ -697,6 +746,9 @@ function bindNavigation() {
 function goToStep(stepNum) {
   state.applicantName = document.getElementById("applicantName").value.trim();
   state.shelterName = document.getElementById("shelterName").value.trim();
+  if (stepNum !== 4) {
+    state.samplePreviewMode = false;
+  }
   state.step = stepNum;
   saveState();
 
@@ -817,6 +869,7 @@ function buildAreaCard(area) {
           id="file-${area.id}"
           accept="image/*"
           class="hidden"
+          ${p.loading ? "disabled" : ""}
         />
       </label>
 
@@ -850,6 +903,7 @@ function buildAreaCard(area) {
 
   const fileInput = card.querySelector(`#file-${area.id}`);
   fileInput.addEventListener("change", async (e) => {
+    if (state.photos[area.id]?.loading) return;
     const file = e.target.files[0];
     if (!file) return;
     try {
@@ -1095,30 +1149,46 @@ function createFallbackSampleIllustration(area) {
 }
 
 async function loadSampleForArea(area) {
-  let dataUrl;
-  try {
-    dataUrl = await loadImageUrlAsDataUrl(area.sampleImage);
-  } catch (e) {
-    dataUrl = createFallbackSampleIllustration(area);
-  }
-
-  const prev = state.photos[area.id] || {};
-  const archivedPrevious = prev.result ? prev.result : prev.previousResult || null;
+  if (state.photos[area.id]?.loading) return;
+  const current = state.photos[area.id] || {};
   state.photos[area.id] = {
-    ...prev,
-    dataUrl,
-    previousResult: archivedPrevious,
-    result: null,
-    loading: false
+    ...current,
+    loading: true
   };
-  state.report = null;
   renderSingleArea(area);
-  await analyzeArea(area);
+
+  try {
+    let dataUrl;
+    try {
+      dataUrl = await loadImageUrlAsDataUrl(area.sampleImage);
+    } catch (e) {
+      dataUrl = createFallbackSampleIllustration(area);
+    }
+
+    const prev = state.photos[area.id] || {};
+    const archivedPrevious = prev.result ? prev.result : prev.previousResult || null;
+    state.photos[area.id] = {
+      ...prev,
+      dataUrl,
+      previousResult: archivedPrevious,
+      result: null,
+      loading: false
+    };
+    state.report = null;
+    state.samplePreviewMode = false;
+    renderSingleArea(area);
+    await analyzeArea(area);
+  } catch (_) {
+    if (state.photos[area.id]) {
+      state.photos[area.id].loading = false;
+      renderSingleArea(area);
+    }
+  }
 }
 
 async function analyzeArea(area) {
   const p = state.photos[area.id];
-  if (!p || !p.dataUrl) return;
+  if (!p || !p.dataUrl || p.loading) return;
 
   p.loading = true;
   renderSingleArea(area);
@@ -1154,6 +1224,7 @@ async function analyzeArea(area) {
           staffCheckPoint: demo.staffPoint
         };
     state.report = null;
+    state.samplePreviewMode = false;
     saveState();
     renderSingleArea(area);
     updateStepperUI();
@@ -1219,6 +1290,7 @@ async function startHearing() {
 }
 
 async function sendHearingMessage(text) {
+  if (state.hearingLoading) return;
   if (text !== "もう一度つなぐ") {
     state.hearingMessages.push({ role: "user", text });
   }
@@ -1226,30 +1298,32 @@ async function sendHearingMessage(text) {
   state.samplePreviewMode = false;
 
   if (!state.apiKeyConfigured) {
+    state.hearingLoading = true;
     const idx = state.hearingAnswered;
     const keys = ["housing", "careRoutine", "familyAgreement", "safetyAwareness", "emergencyPlan"];
     if (keys[idx]) state.hearingSummary[keys[idx]] = text;
     state.hearingAnswered = Math.min(5, idx + 1);
     renderChat([]);
-    await sleep(420);
+    try {
+      await sleep(420);
 
-    if (state.hearingAnswered < DEMO_HEARING_SCRIPT.length) {
-      const next = getDemoHearingStep(state.hearingAnswered, state.petType);
-      state.hearingMessages.push({ role: "ai", text: next.q });
-      state.quickReplies = next.chips;
+      if (state.hearingAnswered < DEMO_HEARING_SCRIPT.length) {
+        const next = getDemoHearingStep(state.hearingAnswered, state.petType);
+        state.hearingMessages.push({ role: "ai", text: next.q });
+        state.quickReplies = next.chips;
+      } else {
+        state.hearingComplete = true;
+        state.quickReplies = [];
+        state.hearingMessages.push({
+          role: "ai",
+          text: "5つの項目の確認が完了しました！ご協力ありがとうございます。\n右下の「ステップ4：提出用レポートを作成する」ボタンから、結果と提出用レポートを確認できます。"
+        });
+      }
       saveState();
       updateStepperUI();
-      renderChat(next.chips);
-    } else {
-      state.hearingComplete = true;
-      state.quickReplies = [];
-      state.hearingMessages.push({
-        role: "ai",
-        text: "5つの項目の確認が完了しました！ご協力ありがとうございます。\n右下の「ステップ4：提出用レポートを作成する」ボタンから、結果と提出用レポートを確認できます。"
-      });
-      saveState();
-      updateStepperUI();
-      renderChat([]);
+    } finally {
+      state.hearingLoading = false;
+      renderChat(state.hearingComplete ? [] : state.quickReplies);
     }
     return;
   }
@@ -1442,7 +1516,7 @@ function enterStep4() {
   setReportView(state.reportView);
 
   if (state.samplePreviewMode) {
-    renderReportSheet(SAMPLE_PREVIEW_REPORT, true);
+    renderReportSheet(getSamplePreviewReport(state.petType), true);
   } else {
     generateReport(false);
   }
@@ -1747,7 +1821,7 @@ function renderReportSheet(rep, isSamplePreview = false) {
         <tr><th>住居・ペット可否</th><td>${escapeHtml(hs.housing || "面談時に確認予定")}</td></tr>
         <tr><th>留守番時間・お世話体制</th><td>${escapeHtml(hs.careRoutine || "面談時に確認予定")}</td></tr>
         <tr><th>ご家族の同意・アレルギー</th><td>${escapeHtml(hs.familyAgreement || "面談時に確認予定")}</td></tr>
-        <tr><th>室内飼い・脱走防止意識</th><td>${escapeHtml(hs.safetyAwareness || "面談時に確認予定")}</td></tr>
+        <tr><th>${state.petType === "dog" ? "室内飼育・脱走防止意識" : "室内飼い・脱走防止意識"}</th><td>${escapeHtml(hs.safetyAwareness || "面談時に確認予定")}</td></tr>
         <tr><th>動物病院・緊急時の備え</th><td>${escapeHtml(hs.emergencyPlan || "面談時に確認予定")}</td></tr>
       </table>
     </div>
@@ -1811,7 +1885,7 @@ function collectReportShoppingList(rep, isSamplePreview) {
   const seen = new Set();
   AREAS.forEach((area) => {
     const items = isSamplePreview
-      ? area.demoShoppingItems || []
+      ? getDemoAreaData(area, state.petType).shoppingItems || []
       : state.photos[area.id]?.result?.shoppingItems || [];
     items.forEach((s) => {
       const name = (s.item || "").trim();
