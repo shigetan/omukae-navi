@@ -58,7 +58,30 @@ const AREAS = [
         reason: "換気時の窓の開き幅を安全に制限するため"
       }
     ],
-    demoStaffPoint: "網戸ロック追加後の写真を1枚確認できれば、窓まわりの安全性は十分と判断できます。"
+    demoStaffPoint: "網戸ロック追加後の写真を1枚確認できれば、窓まわりの安全性は十分と判断できます。",
+    demoDog: {
+      status: "caution",
+      score: 78,
+      summary: "窓まわりの整理は良好ですが、誤って飛び出さないための網戸・サッシロックがあるとさらに安心です。",
+      goodPoints: ["窓周辺に誤飲しやすそうな細かいものが少なく見通しが良いです。"],
+      risks: [
+        "外の音や犬に反応して網戸に体当たりし、外れてしまう危険があります。",
+        "ベランダへ出る場合は手すりや柵の隙間をすり抜けないか確認が必要です。"
+      ],
+      improvements: [
+        "サッシ用の補助ロックを付けて、換気時も犬が通れない開き幅に制限しましょう。",
+        "ベランダに出る機会がある場合は隙間防止ネットや転落防止対策を整えると安心です。"
+      ],
+      shoppingItems: [
+        {
+          item: "サッシ用 補助ロック（窓ロック）",
+          where: "ホームセンター",
+          estimatedPrice: "約500〜900円",
+          reason: "換気中に窓が開きすぎて犬が飛び出すのを防ぐため"
+        }
+      ],
+      staffPoint: "窓ロック追加とベランダ柵の隙間確認ができれば、窓まわりの安全性は十分と判断できます。"
+    }
   },
   {
     id: "entrance",
@@ -83,7 +106,27 @@ const AREAS = [
         reason: "家族や来客が中扉を閉め忘れないようにするため"
       }
     ],
-    demoStaffPoint: "中扉による二重構造を確認済み。玄関からの脱走リスクは低めです。"
+    demoStaffPoint: "中扉による二重構造を確認済み。玄関からの脱走リスクは低めです。",
+    demoDog: {
+      status: "safe",
+      score: 88,
+      summary: "玄関とリビングの間に仕切り扉があり、帰宅時や来客時の飛び出し防止として安心な構造です。",
+      goodPoints: [
+        "玄関ドアと生活スペースの間に仕切りがあり、二段階の飛び出し防止になっています。",
+        "床に散歩用品や小物が散らばっておらず、安全に出入りできそうです。"
+      ],
+      risks: ["チャイムが鳴ったときや荷物受け取り時に中扉が開けっぱなしにならないよう注意が必要です。"],
+      improvements: ["足腰が元気な犬種の場合は、ペットゲートの併用もさらに安心です。"],
+      shoppingItems: [
+        {
+          item: "脱走注意ステッカー（ドア用）",
+          where: "100円ショップ",
+          estimatedPrice: "約110円",
+          reason: "家族や来客が扉の閉め忘れにすぐ気づけるようにするため"
+        }
+      ],
+      staffPoint: "二重扉による飛び出し防止を確認済み。玄関からの逸走リスクは低めです。"
+    }
   },
   {
     id: "living",
@@ -117,7 +160,36 @@ const AREAS = [
         reason: "電源タップや余ったコードをまとめて安全に隠すため"
       }
     ],
-    demoStaffPoint: "写っている観葉植物の品種確認、または撤去・移動の確認を推奨します。"
+    demoStaffPoint: "写っている観葉植物の品種確認、または撤去・移動の確認を推奨します。",
+    demoDog: {
+      status: "action_needed",
+      score: 64,
+      summary: "明るく過ごしやすいリビングですが、観葉植物・電気コード・床の滑りやすさ対策をおすすめします。",
+      goodPoints: ["視界が開けており、犬の様子を見守りやすいリビング環境です。"],
+      risks: [
+        "犬が届く高さに観葉植物があると、誤食して体調を崩す恐れがあります。",
+        "電源コードをかじって感電するリスクや、フローリングで関節を痛める可能性があります。"
+      ],
+      improvements: [
+        "観葉植物は犬に安全か確認し、口が届かない高さや別室へ移動しましょう。",
+        "よく走る場所にはクッションマットやラグを敷き、コード類はカバーで保護しましょう。"
+      ],
+      shoppingItems: [
+        {
+          item: "スパイラルチューブ（配線保護カバー）",
+          where: "100円ショップ",
+          estimatedPrice: "約110〜220円",
+          reason: "犬が電気コードをかじることによる感電や誤飲を防ぐため"
+        },
+        {
+          item: "滑り止めクッションマット・ジョイントマット",
+          where: "100円ショップ・ホームセンター",
+          estimatedPrice: "約550〜2,000円",
+          reason: "フローリングでの足腰・関節の負担や滑りを防ぐため"
+        }
+      ],
+      staffPoint: "観葉植物の移動・種類確認、および電気コードと床の滑り対策の予定確認を推奨します。"
+    }
   },
   {
     id: "space",
@@ -142,9 +214,51 @@ const AREAS = [
         reason: "お迎え初日の緊張をやわらげる隠れ場所を作るため"
       }
     ],
-    demoStaffPoint: "飼育スペースは確保済み。お迎え時のケージ設置予定をオンライン面談で確認でOK。"
+    demoStaffPoint: "飼育スペースは確保済み。お迎え時のケージ設置予定をオンライン面談で確認でOK。",
+    demoDog: {
+      status: "safe",
+      score: 88,
+      summary: "サークルやクレートを無理なく置ける広さがあり、落ち着いて過ごせる飼育スペースです。",
+      goodPoints: [
+        "寝床とトイレを少し離して配置できる十分なスペースが確保されています。",
+        "直射日光を避けながら家族の気配を感じられる落ち着いた場所です。"
+      ],
+      risks: ["床材が滑りやすい場合は、サークル内にペット用マットを敷くと足腰にやさしいです。"],
+      improvements: ["お迎え初期はサークルの一部を布で覆うと、犬が安心できる巣穴のような空間になります。"],
+      shoppingItems: [
+        {
+          item: "滑り止めシート・サークル用マット",
+          where: "100円ショップ・ホームセンター",
+          estimatedPrice: "約330〜880円",
+          reason: "犬がサークル内で踏ん張りやすくし、関節を守るため"
+        }
+      ],
+      staffPoint: "飼育スペースは確保済み。サークルとトイレの配置予定を面談で確認できれば問題ありません。"
+    }
   }
 ];
+
+function toArray(val) {
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string" && val.trim()) return [val.trim()];
+  return [];
+}
+
+function getDemoAreaData(area, petType = state.petType) {
+  if (petType === "dog" && area.demoDog) {
+    return area.demoDog;
+  }
+  return {
+    status: area.demoStatus,
+    score: area.demoScore,
+    summary: area.demoSummary,
+    goodPoints: area.demoGoodPoints || [],
+    risks: area.demoRisks || [],
+    improvements: area.demoImprovements || [],
+    shoppingItems: area.demoShoppingItems || [],
+    staffPoint: area.demoStaffPoint || ""
+  };
+}
 
 const DEMO_HEARING_SCRIPT = [
   {
@@ -168,6 +282,16 @@ const DEMO_HEARING_SCRIPT = [
     chips: ["徒歩・車圏内に動物病院あり、キャリーも準備予定", "これから近所の病院を探す予定"]
   }
 ];
+
+function getDemoHearingStep(idx, petType = state.petType) {
+  if (idx === 3 && petType === "dog") {
+    return {
+      q: "ご家族の協力体制があるのはとても心強いです！\n\n【4/5】室内での安全な居場所づくりや脱走防止、終生飼養（最後まで責任を持って育てること）について、現在のお考えを教えてください。",
+      chips: ["室内の安全環境と脱走防止対策を整えて迎える", "終生飼養の責任を持って最後まで大切に育てる"]
+    };
+  }
+  return DEMO_HEARING_SCRIPT[idx] || DEMO_HEARING_SCRIPT[DEMO_HEARING_SCRIPT.length - 1];
+}
 
 const SAMPLE_PREVIEW_REPORT = {
   overallReadiness: "almost",
@@ -241,6 +365,117 @@ const state = {
   reportView: "applicant", // "applicant" | "submission"
   samplePreviewMode: false
 };
+
+// サンプル見本プレビュー専用のチェック状態（本番の保存データに混ぜない）
+let sampleCheckedShopping = {};
+
+function getShoppingItemKey(itemObj, idx = 0) {
+  const name = String(itemObj?.item || "").trim();
+  return name || `item-${idx}`;
+}
+
+function buildDynamicDemoReport() {
+  const analyzedAreas = AREAS
+    .map((area) => ({ area, photo: state.photos[area.id] }))
+    .filter((entry) => entry.photo && entry.photo.result);
+
+  const safeCount = analyzedAreas.filter((e) => e.photo.result.status === "safe").length;
+  const cautionCount = analyzedAreas.filter((e) => e.photo.result.status === "caution").length;
+  const actionCount = analyzedAreas.filter((e) => e.photo.result.status === "action_needed").length;
+  const analyzedNames = analyzedAreas.map((e) => e.area.title).join("・") || "未実施";
+  const missingCount = AREAS.length - analyzedAreas.length;
+  const petLabel = PET_LABELS[state.petType] || "保護猫・保護犬";
+
+  let overallReadiness = "almost";
+  let overallLabel = "あと少しの準備でさらに安心してお迎えできます";
+  if (analyzedAreas.length === 0) {
+    overallReadiness = "needs_prep";
+    overallLabel = "まずは写真チェックとヒアリングを進めましょう";
+  } else if (actionCount > 0) {
+    overallReadiness = "almost";
+    overallLabel = "お迎え前の優先対策ポイントを確認しておきましょう";
+  } else if (cautionCount === 0 && missingCount === 0 && state.hearingAnswered >= 5) {
+    overallReadiness = "ready";
+    overallLabel = "おうち環境の準備がしっかり整っています！";
+  }
+
+  const recheckedAreas = analyzedAreas.filter((e) => Boolean(e.photo.previousResult));
+  const areaPhrase = missingCount === 0
+    ? "4箇所すべてのチェック"
+    : `${analyzedNames}（計${analyzedAreas.length}箇所）のチェック`;
+  const recheckPhrase = recheckedAreas.length
+    ? `また、${recheckedAreas.map((e) => e.area.title).join("・")}では対策後の再確認も完了しています。`
+    : "";
+  const hearingPhrase = state.hearingAnswered >= 5
+    ? "事前ヒアリング5項目も確認済みです。"
+    : `事前ヒアリングは現在 ${state.hearingAnswered}/5 問まで回答済みです。`;
+
+  const overallComment =
+    `${petLabel}のお迎えに向けた${areaPhrase}が完了しました。${recheckPhrase}${hearingPhrase}` +
+    (actionCount + cautionCount > 0
+      ? "気になったポイントだけ事前に対策しておくと、より安心して新しい家族を迎えられます。"
+      : "良い点が多く、このまま前向きにお迎え準備を進められる状態です。");
+
+  const staffSummary =
+    `Web体験モードによる事前確認サマリー（診断済み：${analyzedAreas.length}/${AREAS.length}箇所、` +
+    `準備バッチリ ${safeCount}・あと少し ${cautionCount}・要対策 ${actionCount}、` +
+    `ヒアリング ${state.hearingAnswered}/5問回答）。` +
+    (missingCount > 0 ? "未登録の場所はオンライン面談または追加写真で確認可能です。" : "");
+
+  const recommendedNextStep =
+    actionCount + cautionCount > 0
+      ? "気になるポイントの対策写真追加 ＋ オンライン面談での最終確認"
+      : missingCount > 0 || state.hearingAnswered < 5
+        ? "未確認項目のヒアリング・追加写真確認 ＋ オンライン面談"
+        : "15分程度のオンライン面談による最終確認";
+
+  const seenActions = new Set();
+  const priorityActions = [];
+  analyzedAreas.forEach(({ photo }) => {
+    const res = photo.result;
+    if (res.status === "safe") return;
+    toArray(res.improvements).forEach((imp) => {
+      if (imp && !seenActions.has(imp) && priorityActions.length < 4) {
+        seenActions.add(imp);
+        priorityActions.push(imp);
+      }
+    });
+  });
+  if (state.hearingAnswered < 5) {
+    priorityActions.push("ステップ3の残りヒアリング項目を完了しておくと提出内容がより充実します");
+  }
+  if (priorityActions.length === 0) {
+    priorityActions.push("お迎え日までに近隣の動物病院の診療時間・休診日をメモしておく");
+  }
+
+  const seenShop = new Set();
+  const shoppingList = [];
+  analyzedAreas.forEach(({ area, photo }) => {
+    const items = Array.isArray(photo.result.shoppingItems) ? photo.result.shoppingItems : [];
+    items.forEach((s) => {
+      const name = String(s.item || "").trim();
+      if (!name || seenShop.has(name)) return;
+      seenShop.add(name);
+      shoppingList.push({
+        item: name,
+        where: s.where || "100円ショップ等",
+        estimatedPrice: s.estimatedPrice || "",
+        priority: photo.result.status === "action_needed" ? "優先" : "あると安心",
+        note: s.reason || `${area.title}の安全対策`
+      });
+    });
+  });
+
+  return {
+    overallReadiness,
+    overallLabel,
+    overallComment,
+    staffSummary,
+    recommendedNextStep,
+    priorityActions,
+    shoppingList
+  };
+}
 
 const PET_LABELS = { cat: "保護猫", dog: "保護犬" };
 const PRESET_LABELS = {
@@ -488,6 +723,13 @@ function goToStep(stepNum) {
 }
 
 /* ---------- Step 1 ---------- */
+function resetUnstartedHearingIfNeeded() {
+  if (state.hearingAnswered === 0 && state.hearingMessages.length <= 1) {
+    state.hearingMessages = [];
+    state.quickReplies = [];
+  }
+}
+
 function bindStep1() {
   document.querySelectorAll("#petChoices .choice-card").forEach((card) => {
     card.addEventListener("click", () => {
@@ -495,6 +737,7 @@ function bindStep1() {
       card.classList.add("selected");
       state.petType = card.dataset.pet;
       state.report = null;
+      resetUnstartedHearingIfNeeded();
       saveState();
     });
   });
@@ -505,6 +748,7 @@ function bindStep1() {
       card.classList.add("selected");
       state.shelterPreset = card.dataset.preset;
       state.report = null;
+      resetUnstartedHearingIfNeeded();
       saveState();
     });
   });
@@ -515,6 +759,7 @@ function bindStep1() {
     state.hasResidentPet = e.target.checked;
     residentCard.classList.toggle("selected", state.hasResidentPet);
     state.report = null;
+    resetUnstartedHearingIfNeeded();
     saveState();
   });
 
@@ -540,18 +785,15 @@ function syncStep1Inputs() {
 }
 
 /* ---------- Step 2: Photo AI Check ---------- */
-function renderAreas() {
-  const grid = document.getElementById("areasGrid");
-  grid.innerHTML = "";
+function buildAreaCard(area) {
+  const p = state.photos[area.id] || {};
+  const status = p.result ? p.result.status : "pending";
+  const needsImprovement = p.result && (status === "caution" || status === "action_needed");
 
-  AREAS.forEach((area) => {
-    const p = state.photos[area.id] || {};
-    const status = p.result ? p.result.status : "pending";
-    const needsImprovement = p.result && (status === "caution" || status === "action_needed");
-
-    const card = document.createElement("div");
-    card.className = "area-card";
-    card.innerHTML = `
+  const card = document.createElement("div");
+  card.className = "area-card";
+  card.id = `area-card-${area.id}`;
+  card.innerHTML = `
       <div class="area-head">
         <div>
           <h3 class="area-title"><span class="area-icon-badge">${svgIcon(area.iconName)}</span>${area.title}</h3>
@@ -606,12 +848,11 @@ function renderAreas() {
       </div>
     `;
 
-    grid.appendChild(card);
-
-    const fileInput = card.querySelector(`#file-${area.id}`);
-    fileInput.addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+  const fileInput = card.querySelector(`#file-${area.id}`);
+  fileInput.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
       const resized = await resizeImageFile(file, 840, 0.78);
       const prev = state.photos[area.id] || {};
       // すでに診断済みの結果があれば「対策前（ビフォー）」として保持する
@@ -625,28 +866,66 @@ function renderAreas() {
       };
       state.report = null;
       saveState();
-      renderAreas();
+      renderSingleArea(area);
       updateStepperUI();
-    });
-
-    const noteInput = card.querySelector(`#note-${area.id}`);
-    noteInput.addEventListener("input", (e) => {
-      state.photos[area.id] = {
-        ...(state.photos[area.id] || {}),
-        note: e.target.value
-      };
-      saveState();
-    });
-
-    const recheckBtn = card.querySelector(`#recheck-${area.id}`);
-    if (recheckBtn) {
-      recheckBtn.addEventListener("click", () => fileInput.click());
+    } catch (_) {
+      alert("画像の読み込みに失敗しました。JPEG や PNG などの画像ファイルでお試しください。");
+    } finally {
+      e.target.value = "";
     }
-
-    card.querySelector(`#analyze-${area.id}`).addEventListener("click", () => analyzeArea(area));
-    card.querySelector(`#sample-${area.id}`).addEventListener("click", () => loadSampleForArea(area));
   });
 
+  const noteInput = card.querySelector(`#note-${area.id}`);
+  noteInput.addEventListener("input", (e) => {
+    state.photos[area.id] = {
+      ...(state.photos[area.id] || {}),
+      note: e.target.value
+    };
+    saveState();
+  });
+
+  const recheckBtn = card.querySelector(`#recheck-${area.id}`);
+  if (recheckBtn) {
+    recheckBtn.addEventListener("click", () => fileInput.click());
+  }
+
+  card.querySelector(`#analyze-${area.id}`).addEventListener("click", () => analyzeArea(area));
+  card.querySelector(`#sample-${area.id}`).addEventListener("click", () => loadSampleForArea(area));
+  return card;
+}
+
+function renderSingleArea(area) {
+  const existing = document.getElementById(`area-card-${area.id}`);
+  if (!existing) {
+    renderAreas();
+    return;
+  }
+  const activeEl = document.activeElement;
+  const wasNoteFocused = activeEl && activeEl.id === `note-${area.id}`;
+  const selStart = wasNoteFocused ? activeEl.selectionStart : null;
+  const selEnd = wasNoteFocused ? activeEl.selectionEnd : null;
+
+  const nextCard = buildAreaCard(area);
+  existing.replaceWith(nextCard);
+  updateAnalyzedCount();
+
+  if (wasNoteFocused) {
+    const nextNote = nextCard.querySelector(`#note-${area.id}`);
+    if (nextNote) {
+      nextNote.focus();
+      if (selStart !== null && selEnd !== null) {
+        nextNote.setSelectionRange(selStart, selEnd);
+      }
+    }
+  }
+}
+
+function renderAreas() {
+  const grid = document.getElementById("areasGrid");
+  grid.innerHTML = "";
+  AREAS.forEach((area) => {
+    grid.appendChild(buildAreaCard(area));
+  });
   updateAnalyzedCount();
 }
 
@@ -704,9 +983,9 @@ function formatBeforeAfterMessage(prev, curr) {
 
 function renderAreaResultHtml(area, p, needsImprovement) {
   const res = p.result;
-  const good = (res.goodPoints || []).map((g) => `<li>${escapeHtml(g)}</li>`).join("");
-  const risks = (res.risks || []).map((r) => `<li>${escapeHtml(r)}</li>`).join("");
-  const imps = (res.improvements || []).map((i) => `<li>${escapeHtml(i)}</li>`).join("");
+  const good = toArray(res.goodPoints).map((g) => `<li>${escapeHtml(g)}</li>`).join("");
+  const risks = toArray(res.risks).map((r) => `<li>${escapeHtml(r)}</li>`).join("");
+  const imps = toArray(res.improvements).map((i) => `<li>${escapeHtml(i)}</li>`).join("");
   const shopItems = Array.isArray(res.shoppingItems) ? res.shoppingItems : [];
   const shopHtml = shopItems
     .map((s) => {
@@ -833,7 +1112,7 @@ async function loadSampleForArea(area) {
     loading: false
   };
   state.report = null;
-  renderAreas();
+  renderSingleArea(area);
   await analyzeArea(area);
 }
 
@@ -842,13 +1121,14 @@ async function analyzeArea(area) {
   if (!p || !p.dataUrl) return;
 
   p.loading = true;
-  renderAreas();
+  renderSingleArea(area);
 
   if (!state.apiKeyConfigured) {
     await sleep(650);
     p.loading = false;
     // 体験版でも「対策後に撮り直す」と安心度がアップするビフォー／アフターを体験可能にする
     const isRecheck = Boolean(p.previousResult);
+    const demo = getDemoAreaData(area, state.petType);
     p.result = isRecheck
       ? {
           status: "safe",
@@ -856,7 +1136,7 @@ async function analyzeArea(area) {
           summary: "対策後の写真を再チェックしました！安全面がしっかり整い、安心してお迎えできる状態です。",
           goodPoints: [
             "以前気になったポイントに対して丁寧に対策されています。",
-            ...(area.demoGoodPoints || []).slice(0, 1)
+            ...(demo.goodPoints || []).slice(0, 1)
           ],
           risks: [],
           improvements: ["お迎え当日までこのまま安全な状態をキープしましょう。"],
@@ -864,18 +1144,18 @@ async function analyzeArea(area) {
           staffCheckPoint: "対策後の再提出写真で改善を確認済み。オンライン面談のみで最終確認へ進める水準です。"
         }
       : {
-          status: area.demoStatus,
-          score: area.demoScore,
-          summary: area.demoSummary,
-          goodPoints: area.demoGoodPoints,
-          risks: area.demoRisks,
-          improvements: area.demoImprovements,
-          shoppingItems: area.demoShoppingItems || [],
-          staffCheckPoint: area.demoStaffPoint
+          status: demo.status,
+          score: demo.score,
+          summary: demo.summary,
+          goodPoints: demo.goodPoints,
+          risks: demo.risks,
+          improvements: demo.improvements,
+          shoppingItems: demo.shoppingItems || [],
+          staffCheckPoint: demo.staffPoint
         };
     state.report = null;
     saveState();
-    renderAreas();
+    renderSingleArea(area);
     updateStepperUI();
     return;
   }
@@ -904,7 +1184,7 @@ async function analyzeArea(area) {
     alert(`AI診断エラー: ${err.message}`);
   } finally {
     p.loading = false;
-    renderAreas();
+    renderSingleArea(area);
     updateStepperUI();
   }
 }
@@ -926,7 +1206,7 @@ async function startHearing() {
   // 1問目は待ち時間ゼロ＆API回数節約のため即時表示し、2問目以降の応答からGeminiと対話する
   const petLabel = PET_LABELS[state.petType] || "保護猫";
   const sourceLabel = getAdoptionSourceLabel();
-  const firstChips = DEMO_HEARING_SCRIPT[0].chips;
+  const firstChips = getDemoHearingStep(0, state.petType).chips;
   const greeting =
     `こんにちは！おむかえナビのAIヒアリング担当です。\n` +
     `${petLabel}（お迎え元：${sourceLabel}）の事前確認として、5つの質問を順番にお伺いしますね。\n\n` +
@@ -954,7 +1234,7 @@ async function sendHearingMessage(text) {
     await sleep(420);
 
     if (state.hearingAnswered < DEMO_HEARING_SCRIPT.length) {
-      const next = DEMO_HEARING_SCRIPT[state.hearingAnswered];
+      const next = getDemoHearingStep(state.hearingAnswered, state.petType);
       state.hearingMessages.push({ role: "ai", text: next.q });
       state.quickReplies = next.chips;
       saveState();
@@ -993,7 +1273,9 @@ async function fetchNextHearingTurn() {
         shelterPreset: state.shelterPreset,
         hasResidentPet: state.hasResidentPet,
         messages: state.hearingMessages,
-        photoSummaries
+        photoSummaries,
+        answeredCount: state.hearingAnswered,
+        hearingSummary: state.hearingSummary
       })
     }, 60000);
     const data = await res.json();
@@ -1030,7 +1312,7 @@ async function fetchNextHearingTurn() {
 function getFallbackQuickReplies() {
   if (state.hearingComplete) return [];
   const idx = Math.min(DEMO_HEARING_SCRIPT.length - 1, Math.max(0, Number(state.hearingAnswered || 0)));
-  return (DEMO_HEARING_SCRIPT[idx] && DEMO_HEARING_SCRIPT[idx].chips) || [];
+  return getDemoHearingStep(idx, state.petType).chips || [];
 }
 
 function renderChat(quickReplies = null) {
@@ -1098,6 +1380,11 @@ function bindReportActions() {
   document.getElementById("printReportBtn").addEventListener("click", () => window.print());
   document.getElementById("regenerateReportBtn").addEventListener("click", () => {
     state.samplePreviewMode = false;
+    const stats = getReadinessStats();
+    if (!stats.readyForReport) {
+      enterStep4();
+      return;
+    }
     generateReport(true);
   });
   document.getElementById("resetAllBtn").addEventListener("click", () => {
@@ -1150,6 +1437,8 @@ function enterStep4() {
   gateEl.classList.add("hidden");
   mainEl.classList.remove("hidden");
   sampleBanner.classList.toggle("hidden", !state.samplePreviewMode);
+  const regenBtn = document.getElementById("regenerateReportBtn");
+  if (regenBtn) regenBtn.classList.toggle("hidden", state.samplePreviewMode);
   setReportView(state.reportView);
 
   if (state.samplePreviewMode) {
@@ -1227,11 +1516,12 @@ async function generateReport(force = false) {
 
   if (!state.apiKeyConfigured) {
     await sleep(550);
-    state.report = SAMPLE_PREVIEW_REPORT;
+    const dynamicReport = buildDynamicDemoReport();
+    state.report = dynamicReport;
     saveState();
     updateStepperUI();
     loadingEl.classList.add("hidden");
-    renderReportSheet(SAMPLE_PREVIEW_REPORT, false);
+    renderReportSheet(dynamicReport, false);
     return;
   }
 
@@ -1271,15 +1561,16 @@ function renderReportSheet(rep, isSamplePreview = false) {
   });
 
   const photoCardsHtml = AREAS.map((area) => {
+    const demo = isSamplePreview ? getDemoAreaData(area, state.petType) : null;
     const p = isSamplePreview
       ? {
           dataUrl: area.sampleImage,
           result: {
-            status: area.demoStatus,
-            score: area.demoScore,
-            summary: area.demoSummary,
-            improvements: area.demoImprovements,
-            staffCheckPoint: area.demoStaffPoint
+            status: demo.status,
+            score: demo.score,
+            summary: demo.summary,
+            improvements: demo.improvements,
+            staffCheckPoint: demo.staffPoint
           }
         }
       : state.photos[area.id];
@@ -1301,7 +1592,7 @@ function renderReportSheet(rep, isSamplePreview = false) {
            ${svgIcon("sparkle", "icon-xs")} ${escapeHtml(formatBeforeAfterMessage(p.previousResult, r))}
          </div>`
       : "";
-    const firstTip = (r.improvements && r.improvements[0]) || "";
+    const firstTip = toArray(r.improvements)[0] || "";
 
     return `
       <div class="report-photo-item">
@@ -1332,23 +1623,27 @@ function renderReportSheet(rep, isSamplePreview = false) {
         housing: "ペット可の賃貸マンション（管理規約を確認済み）",
         careRoutine: "平日のお留守番は6時間ほど、ご家族と交代で見守り予定",
         familyAgreement: "同居家族全員が賛成・動物アレルギーなし",
-        safetyAwareness: "完全室内飼い・脱走防止対策を整えて最後まで大切に育てる",
+        safetyAwareness:
+          state.petType === "dog"
+            ? "室内の安全確保・脱走防止対策を整えて最後まで大切に育てる"
+            : "完全室内飼い・脱走防止対策を整えて最後まで大切に育てる",
         emergencyPlan: "車で10分圏内に動物病院あり、キャリーケースも準備予定"
       }
     : state.hearingSummary;
 
-  const actionsHtml = (rep.priorityActions || [])
+  const actionsHtml = toArray(rep.priorityActions)
     .map((act) => `<li>${escapeHtml(act)}</li>`)
     .join("");
 
   // レポート側の shoppingList を優先し、無ければ各写真診断の shoppingItems を集約
+  const checkStore = isSamplePreview ? sampleCheckedShopping : state.checkedShopping;
   const shoppingList = collectReportShoppingList(rep, isSamplePreview);
-  const checkedCount = shoppingList.filter((s) => state.checkedShopping[s.item]).length;
+  const checkedCount = shoppingList.filter((s, idx) => Boolean(checkStore[getShoppingItemKey(s, idx)])).length;
   const shoppingHtml = shoppingList.length
     ? shoppingList
         .map((s, idx) => {
-          const key = s.item || `item-${idx}`;
-          const isChecked = Boolean(state.checkedShopping[key]);
+          const key = getShoppingItemKey(s, idx);
+          const isChecked = Boolean(checkStore[key]);
           const where = s.where || "100円ショップ等";
           const whereClass = where.includes("100") ? "hyakkin" : "homecenter";
           const isPriority = s.priority === "優先" || s.priority === "高";
@@ -1459,7 +1754,7 @@ function renderReportSheet(rep, isSamplePreview = false) {
 
     <div class="report-section submission-only staff-receipt-box">
       <div class="staff-receipt-grid">
-        <div><strong>受付日：</strong>2026年 ＿＿月 ＿＿日</div>
+        <div><strong>受付日：</strong>${new Date().getFullYear()}年 ＿＿月 ＿＿日</div>
         <div><strong>ご担当：</strong>＿＿＿＿＿＿＿＿＿＿</div>
       </div>
       <div class="staff-receipt-memo"><strong>自治体・保護団体 担当者様メモ欄：</strong></div>
@@ -1486,8 +1781,10 @@ function renderReportSheet(rep, isSamplePreview = false) {
   sheetEl.querySelectorAll(".shopping-checkbox").forEach((cb) => {
     cb.addEventListener("change", (e) => {
       const key = e.target.dataset.shopKey;
-      state.checkedShopping[key] = e.target.checked;
-      saveState();
+      checkStore[key] = e.target.checked;
+      if (!isSamplePreview) {
+        saveState();
+      }
 
       const row = e.target.closest(".shopping-row");
       if (row) {
@@ -1499,7 +1796,7 @@ function renderReportSheet(rep, isSamplePreview = false) {
       }
       const pill = sheetEl.querySelector("#shoppingProgressPill");
       if (pill) {
-        const done = shoppingList.filter((s) => state.checkedShopping[s.item]).length;
+        const done = shoppingList.filter((s, idx) => Boolean(checkStore[getShoppingItemKey(s, idx)])).length;
         pill.textContent = `準備済み: ${done} / ${shoppingList.length} 点`;
       }
     });

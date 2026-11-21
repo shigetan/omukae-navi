@@ -8,6 +8,7 @@ import os
 import re
 import socket
 import ssl
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -20,7 +21,9 @@ PUBLIC_DIR = BASE_DIR / "public"
 ENV_PATH = BASE_DIR / ".env"
 LAST_MODEL_CACHE_PATH = BASE_DIR / ".last_model"
 
+_MODEL_STATE_LOCK = threading.Lock()
 _CACHED_CANDIDATES = None
+_CACHED_LOCAL_IP = None
 _LAST_WORKING_MODEL = (
     LAST_MODEL_CACHE_PATH.read_text(encoding="utf-8").strip()
     if LAST_MODEL_CACHE_PATH.is_file()
@@ -211,7 +214,10 @@ def get_candidate_models(api_key):
     """Return ordered list of Gemini Flash models with automatic fallback across model families."""
     global _CACHED_CANDIDATES
 
-    if _CACHED_CANDIDATES is None:
+    with _MODEL_STATE_LOCK:
+        cached = _CACHED_CANDIDATES
+
+    if cached is None:
         discovered = []
         url = f"https://generativelanguage.googleapis.com/v1beta/models?key={urllib.parse.quote(api_key)}"
         try:
@@ -256,31 +262,172 @@ def get_candidate_models(api_key):
             if m and m not in ordered:
                 ordered.append(m)
 
-        _CACHED_CANDIDATES = ordered
-        print(f"[おむかえナビ] 利用可能なGeminiモデル候補: {', '.join(_CACHED_CANDIDATES[:6])}", flush=True)
+        with _MODEL_STATE_LOCK:
+            if _CACHED_CANDIDATES is None:
+                _CACHED_CANDIDATES = ordered
+                cached = ordered
+                print(
+                    f"[おむかえナビ] 利用可能なGeminiモデル候補: {', '.join(_CACHED_CANDIDATES[:6])}",
+                    flush=True,
+                )
+            else:
+                cached = _CACHED_CANDIDATES
+
+    configured = get_configured_model()
+    with _MODEL_STATE_LOCK:
+        last_working = _LAST_WORKING_MODEL
+        cooldowns = dict(_MODEL_COOLDOWN_UNTIL)
+        candidate_list = list(cached)
 
     prioritized = []
-    configured = get_configured_model()
     if configured:
         prioritized.append(configured)
-    if _LAST_WORKING_MODEL and _LAST_WORKING_MODEL not in prioritized:
-        prioritized.append(_LAST_WORKING_MODEL)
-    for m in _CACHED_CANDIDATES:
+    if last_working and last_working not in prioritized:
+        prioritized.append(last_working)
+    for m in candidate_list:
         if m not in prioritized:
             prioritized.append(m)
 
     now = time.time()
-    healthy = [m for m in prioritized if _MODEL_COOLDOWN_UNTIL.get(m, 0) <= now]
-    cooling = [m for m in prioritized if _MODEL_COOLDOWN_UNTIL.get(m, 0) > now]
+    healthy = [m for m in prioritized if cooldowns.get(m, 0) <= now]
+    cooling = [m for m in prioritized if cooldowns.get(m, 0) > now]
     return healthy + cooling
 
 
 def extract_json_text(raw_text):
+    """Extract a JSON object from Gemini output, handling prose and fenced blocks safely."""
     text = raw_text.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*", "", text)
-        text = re.sub(r"\s*```$", "", text)
-    return json.loads(text)
+    fence_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text, re.IGNORECASE)
+    candidates = []
+    if fence_match:
+        candidates.append(fence_match.group(1).strip())
+    candidates.append(text)
+
+    decoder = json.JSONDecoder()
+    parsed = None
+    for cand in candidates:
+        try:
+            parsed = json.loads(cand)
+            break
+        except json.JSONDecodeError:
+            pass
+        for idx, ch in enumerate(cand):
+            if ch in "{[":
+                try:
+                    obj, _ = decoder.raw_decode(cand, idx)
+                    parsed = obj
+                    break
+                except json.JSONDecodeError:
+                    continue
+        if parsed is not None:
+            break
+
+    if parsed is None:
+        raise ValueError("Gemini APIの応答から有効なJSONを抽出できませんでした。")
+    if isinstance(parsed, list):
+        if len(parsed) == 1 and isinstance(parsed[0], dict):
+            return parsed[0]
+        raise ValueError("Gemini APIの応答形式がオブジェクトではありませんでした。")
+    if not isinstance(parsed, dict):
+        raise ValueError("Gemini APIの応答形式が不正です。")
+    return parsed
+
+
+def _as_str_list(value):
+    if isinstance(value, list):
+        return [str(x).strip() for x in value if x is not None and str(x).strip()]
+    if isinstance(value, str) and value.strip():
+        return [value.strip()]
+    return []
+
+
+def _normalize_photo_result(data):
+    if not isinstance(data, dict):
+        raise ValueError("写真診断の結果形式が不正です。")
+    status = data.get("status", "caution")
+    if status not in ("safe", "caution", "action_needed"):
+        status = "caution"
+    default_score = {"safe": 90, "caution": 70, "action_needed": 50}[status]
+    try:
+        score = max(0, min(100, int(round(float(data.get("score", default_score))))))
+    except (TypeError, ValueError):
+        score = default_score
+    raw_items = data.get("shoppingItems")
+    shopping_items = []
+    if isinstance(raw_items, list):
+        for entry in raw_items:
+            if isinstance(entry, dict) and str(entry.get("item", "")).strip():
+                shopping_items.append(
+                    {
+                        "item": str(entry.get("item", "")).strip(),
+                        "where": str(entry.get("where", "100円ショップ・ホームセンター")).strip(),
+                        "estimatedPrice": str(entry.get("estimatedPrice", "")).strip(),
+                        "reason": str(entry.get("reason", "")).strip(),
+                    }
+                )
+    return {
+        "status": status,
+        "score": score,
+        "summary": str(data.get("summary") or "").strip(),
+        "goodPoints": _as_str_list(data.get("goodPoints")),
+        "risks": _as_str_list(data.get("risks")),
+        "improvements": _as_str_list(data.get("improvements")),
+        "shoppingItems": shopping_items,
+        "staffCheckPoint": str(data.get("staffCheckPoint") or "").strip(),
+    }
+
+
+def _normalize_hearing_result(data):
+    if not isinstance(data, dict):
+        raise ValueError("ヒアリング応答の形式が不正です。")
+    try:
+        answered = max(0, min(5, int(data.get("answeredCount", 0))))
+    except (TypeError, ValueError):
+        answered = 0
+    raw_summary = data.get("summary")
+    keys = ["housing", "careRoutine", "familyAgreement", "safetyAwareness", "emergencyPlan"]
+    summary = {
+        k: (str(raw_summary.get(k) or "").strip() if isinstance(raw_summary, dict) else "")
+        for k in keys
+    }
+    return {
+        "reply": str(data.get("reply") or "ありがとうございます。続けて教えてください。").strip(),
+        "answeredCount": answered,
+        "isComplete": bool(data.get("isComplete", False)) or answered >= 5,
+        "quickReplies": _as_str_list(data.get("quickReplies")),
+        "summary": summary,
+    }
+
+
+def _normalize_report_result(data):
+    if not isinstance(data, dict):
+        raise ValueError("レポート生成結果の形式が不正です。")
+    readiness = data.get("overallReadiness", "almost")
+    if readiness not in ("ready", "almost", "needs_prep"):
+        readiness = "almost"
+    raw_shop = data.get("shoppingList")
+    shopping_list = []
+    if isinstance(raw_shop, list):
+        for entry in raw_shop:
+            if isinstance(entry, dict) and str(entry.get("item", "")).strip():
+                shopping_list.append(
+                    {
+                        "item": str(entry.get("item", "")).strip(),
+                        "where": str(entry.get("where", "100円ショップ等")).strip(),
+                        "estimatedPrice": str(entry.get("estimatedPrice", "")).strip(),
+                        "priority": str(entry.get("priority", "あると安心")).strip(),
+                        "note": str(entry.get("note", "")).strip(),
+                    }
+                )
+    return {
+        "overallReadiness": readiness,
+        "overallLabel": str(data.get("overallLabel") or "").strip(),
+        "overallComment": str(data.get("overallComment") or "").strip(),
+        "staffSummary": str(data.get("staffSummary") or "").strip(),
+        "recommendedNextStep": str(data.get("recommendedNextStep") or "").strip(),
+        "priorityActions": _as_str_list(data.get("priorityActions")),
+        "shoppingList": shopping_list,
+    }
 
 
 def _thinking_config_for_model(model):
@@ -344,22 +491,25 @@ def call_gemini_json(api_key, parts, system_instruction, temperature=0.3, model_
             parsed = _request_gemini_once(
                 api_key, model, parts, system_instruction, temperature, timeout=per_model_timeout
             )
-            _MODEL_COOLDOWN_UNTIL.pop(model, None)
-            if _LAST_WORKING_MODEL != model:
+            with _MODEL_STATE_LOCK:
+                _MODEL_COOLDOWN_UNTIL.pop(model, None)
+                changed = _LAST_WORKING_MODEL != model
+                _LAST_WORKING_MODEL = model
+                try:
+                    LAST_MODEL_CACHE_PATH.write_text(model + "\n", encoding="utf-8")
+                except Exception:
+                    pass
+            if changed:
                 print(f"[おむかえナビ] 使用モデル確定: {model}", flush=True)
-            _LAST_WORKING_MODEL = model
-            try:
-                LAST_MODEL_CACHE_PATH.write_text(model + "\n", encoding="utf-8")
-            except Exception:
-                pass
             return parsed, model
         except GeminiHTTPError as e:
             last_err = e
             if e.status_code in RETRYABLE_HTTP_CODES:
                 cd = COOLDOWN_BY_CODE.get(e.status_code, 30)
-                _MODEL_COOLDOWN_UNTIL[model] = time.time() + cd
-                if _LAST_WORKING_MODEL == model:
-                    _LAST_WORKING_MODEL = None
+                with _MODEL_STATE_LOCK:
+                    _MODEL_COOLDOWN_UNTIL[model] = time.time() + cd
+                    if _LAST_WORKING_MODEL == model:
+                        _LAST_WORKING_MODEL = None
                 print(
                     f"[おむかえナビ] {model} が一時エラー (HTTP {e.status_code}) のため次のモデルへ切替します",
                     flush=True,
@@ -368,9 +518,10 @@ def call_gemini_json(api_key, parts, system_instruction, temperature=0.3, model_
             raise RuntimeError(format_user_friendly_error(e)) from e
         except Exception as e:
             last_err = e
-            _MODEL_COOLDOWN_UNTIL[model] = time.time() + TIMEOUT_COOLDOWN_SEC
-            if _LAST_WORKING_MODEL == model:
-                _LAST_WORKING_MODEL = None
+            with _MODEL_STATE_LOCK:
+                _MODEL_COOLDOWN_UNTIL[model] = time.time() + TIMEOUT_COOLDOWN_SEC
+                if _LAST_WORKING_MODEL == model:
+                    _LAST_WORKING_MODEL = None
             print(f"[おむかえナビ] {model} で応答遅延/エラー ({e}) のため次のモデルへ切替します", flush=True)
             continue
 
@@ -450,7 +601,8 @@ def analyze_photo_with_gemini(api_key, body):
         {"inline_data": {"mime_type": mime_type, "data": b64_data}},
         {"text": prompt},
     ]
-    result, model = call_gemini_json(api_key, parts, system_instruction, temperature=0.25)
+    raw_result, model = call_gemini_json(api_key, parts, system_instruction, temperature=0.25)
+    result = _normalize_photo_result(raw_result)
     result["model"] = model
     return result
 
@@ -484,12 +636,64 @@ HEARING_FALLBACK_STEPS = [
 ]
 
 
-def build_hearing_fallback_reply(messages):
+def build_hearing_fallback_reply(messages, current_answered=None, current_summary=None, pet_type="cat"):
     """Gemini APIが一時的に全モデル混雑した際もヒアリング会話を止めないセーフティネット"""
-    user_answers = [m.get("text", "").strip() for m in messages if m.get("role") == "user" and m.get("text", "").strip()]
-    answered = min(5, len(user_answers))
     keys = ["housing", "careRoutine", "familyAgreement", "safetyAwareness", "emergencyPlan"]
-    summary = {k: (user_answers[i] if i < len(user_answers) else "") for i, k in enumerate(keys)}
+    filtered_msgs = [
+        m
+        for m in (messages or [])
+        if isinstance(m, dict)
+        and str(m.get("text") or "").strip()
+        and not (
+            m.get("role") == "ai"
+            and "通信が一時的に不安定でした" in str(m.get("text") or "")
+        )
+    ]
+
+    # 連続するユーザー発言は「1問への補足つき回答」として1ブロックにまとめる
+    user_turns = []
+    current_group = []
+    for m in filtered_msgs:
+        role = m.get("role")
+        text = str(m.get("text") or "").strip()
+        if role == "user":
+            if text != "もう一度つなぐ":
+                current_group.append(text)
+        else:
+            if current_group:
+                user_turns.append(" / ".join(current_group))
+                current_group = []
+    trailing_user_answer = " / ".join(current_group) if current_group else ""
+    if current_group:
+        user_turns.append(trailing_user_answer)
+
+    base_summary = (
+        {k: str(current_summary.get(k) or "").strip() for k in keys}
+        if isinstance(current_summary, dict)
+        else {k: "" for k in keys}
+    )
+
+    if current_answered is not None:
+        try:
+            answered_before = max(0, min(5, int(current_answered)))
+        except (TypeError, ValueError):
+            answered_before = 0
+        summary = dict(base_summary)
+        for i, k in enumerate(keys):
+            if not summary[k] and i < answered_before and i < len(user_turns):
+                summary[k] = user_turns[i]
+        if trailing_user_answer and answered_before < 5:
+            if not summary[keys[answered_before]]:
+                summary[keys[answered_before]] = trailing_user_answer
+            answered = min(5, answered_before + 1)
+        else:
+            answered = answered_before
+    else:
+        answered = min(5, len(user_turns))
+        summary = {
+            k: (base_summary.get(k) or (user_turns[i] if i < len(user_turns) else ""))
+            for i, k in enumerate(keys)
+        }
 
     if answered >= 5:
         return {
@@ -502,7 +706,14 @@ def build_hearing_fallback_reply(messages):
             "fallbackUsed": True,
         }
 
-    _, next_q, chips = HEARING_FALLBACK_STEPS[answered]
+    step_key, next_q, chips = HEARING_FALLBACK_STEPS[answered]
+    if step_key == "safetyAwareness" and pet_type == "dog":
+        next_q = (
+            "ご家族の協力体制があるのはとても心強いです！\n\n"
+            "続いて【4/5】室内飼育・脱走防止対策や、終生飼養（最後まで責任を持って育てること）について、現在のお考えを教えてください。"
+        )
+        chips = ["室内飼育で最後まで大切に育てる", "脱走防止対策をしっかり整えて迎える"]
+
     return {
         "reply": next_q,
         "answeredCount": answered,
@@ -520,6 +731,8 @@ def hearing_chat_with_gemini(api_key, body):
     has_resident_pet = bool(body.get("hasResidentPet", False))
     messages = body.get("messages", [])
     photo_summaries = body.get("photoSummaries", [])
+    current_answered = body.get("answeredCount")
+    current_summary = body.get("hearingSummary")
 
     pet_label = PET_LABELS.get(pet_type, "保護猫")
     source_name, source_focus = describe_adoption_source(preset_id, has_resident_pet)
@@ -577,18 +790,24 @@ def hearing_chat_with_gemini(api_key, body):
 """
 
     try:
-        result, model = call_gemini_json(
+        raw_result, model = call_gemini_json(
             api_key,
             [{"text": prompt}],
             system_instruction,
             temperature=0.35,
             model_timeout=TEXT_MODEL_TIMEOUT_SEC,
         )
+        result = _normalize_hearing_result(raw_result)
         result["model"] = model
         return result
     except Exception as e:
         print(f"[おむかえナビ] ヒアリング一時混雑のため継続フォールバックを使用: {e}", flush=True)
-        return build_hearing_fallback_reply(messages)
+        return build_hearing_fallback_reply(
+            messages,
+            current_answered=current_answered,
+            current_summary=current_summary,
+            pet_type=pet_type,
+        )
 
 
 def generate_report_with_gemini(api_key, body):
@@ -645,20 +864,34 @@ def generate_report_with_gemini(api_key, body):
 ※ shoppingList は各写真の診断結果（shoppingItems等）とヒアリング内容をまとめて重複を整理し、100円ショップやホームセンターで買える身近なものを中心に2〜5個提案してください。
 """
 
-    result, model = call_gemini_json(api_key, [{"text": prompt}], system_instruction, temperature=0.3)
+    raw_result, model = call_gemini_json(api_key, [{"text": prompt}], system_instruction, temperature=0.3)
+    result = _normalize_report_result(raw_result)
     result["model"] = model
     return result
 
 
 def get_local_ip():
+    global _CACHED_LOCAL_IP
+    with _MODEL_STATE_LOCK:
+        if _CACHED_LOCAL_IP:
+            return _CACHED_LOCAL_IP
+    s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
-        s.close()
-        return ip
     except Exception:
-        return "127.0.0.1"
+        ip = "127.0.0.1"
+    finally:
+        if s is not None:
+            try:
+                s.close()
+            except Exception:
+                pass
+    with _MODEL_STATE_LOCK:
+        if not _CACHED_LOCAL_IP:
+            _CACHED_LOCAL_IP = ip
+        return _CACHED_LOCAL_IP
 
 
 class OmukaeHandler(BaseHTTPRequestHandler):
@@ -675,11 +908,27 @@ class OmukaeHandler(BaseHTTPRequestHandler):
         self.wfile.write(raw)
 
     def read_json_body(self):
-        length = int(self.headers.get("Content-Length", "0"))
+        raw_length = self.headers.get("Content-Length", "0")
+        try:
+            length = int(raw_length)
+        except (TypeError, ValueError):
+            raise ValueError("Content-Length ヘッダーが不正です。")
+        if length < 0:
+            raise ValueError("Content-Length ヘッダーが不正です。")
         if length > 20 * 1024 * 1024:
             raise ValueError("データサイズが大きすぎます（20MB以下にしてください）。")
         raw = self.rfile.read(length) if length > 0 else b"{}"
-        return json.loads(raw.decode("utf-8"))
+        try:
+            decoded = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            raise ValueError("リクエストの文字コードがUTF-8ではありません。")
+        try:
+            data = json.loads(decoded)
+        except json.JSONDecodeError:
+            raise ValueError("JSONの形式が正しくありません。")
+        if not isinstance(data, dict):
+            raise ValueError("JSONのルートはオブジェクトである必要があります。")
+        return data
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -687,11 +936,12 @@ class OmukaeHandler(BaseHTTPRequestHandler):
 
         if path == "/api/status":
             api_key = get_api_key()
-            active_model = (
-                _LAST_WORKING_MODEL
-                or get_configured_model()
-                or (_CACHED_CANDIDATES[0] if _CACHED_CANDIDATES else "auto (Gemini Flash)")
-            )
+            with _MODEL_STATE_LOCK:
+                active_model = (
+                    _LAST_WORKING_MODEL
+                    or get_configured_model()
+                    or (_CACHED_CANDIDATES[0] if _CACHED_CANDIDATES else "auto (Gemini Flash)")
+                )
             self.send_json(
                 {
                     "apiKeyConfigured": bool(api_key),
@@ -702,9 +952,15 @@ class OmukaeHandler(BaseHTTPRequestHandler):
             return
 
         # Serve static files from public/
-        rel = "index.html" if path == "/" else path.lstrip("/")
-        target = (PUBLIC_DIR / rel).resolve()
-        if not str(target).startswith(str(PUBLIC_DIR)) or not target.is_file():
+        unquoted_path = urllib.parse.unquote(path)
+        rel = "index.html" if unquoted_path in ("", "/") else unquoted_path.lstrip("/")
+        public_root = PUBLIC_DIR.resolve()
+        try:
+            target = (public_root / rel).resolve()
+            is_allowed = target.is_relative_to(public_root) and target.is_file()
+        except (ValueError, OSError):
+            is_allowed = False
+        if not is_allowed:
             self.send_json({"error": "Not Found"}, status=404)
             return
 
