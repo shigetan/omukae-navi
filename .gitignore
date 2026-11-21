@@ -1,0 +1,20 @@
+# 秘密情報・ローカルキャッシュ（絶対に公開しない）
+.env
+.last_model
+
+# Python / OS 一時ファイル
+__pycache__/
+*.pyc
+.DS_Store
+
+# デモ動画制作用のローカル素材・個人作業メモ（公開リポジトリには含めない）
+public/demo-assets/
+public/demo-studio.html
+scripts/
+AGENTS.md
+PROGRESS.md
+SUBMISSION.md
+*.mov
+*.mp4
+*.webm
+*.wav

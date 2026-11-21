@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>おむかえナビ｜保護猫・保護犬を迎えるおうちのAI安全チェック</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='2' y='2' width='60' height='60' rx='18' fill='%23fbf6ec' stroke='%23cfe2d9' stroke-width='3'/><path d='M12 29L32 12l20 17' fill='none' stroke='%23e07a5f' stroke-width='5.5' stroke-linecap='round' stroke-linejoin='round'/><circle cx='24' cy='34' r='3.6' fill='%232f7d64'/><circle cx='32' cy='30' r='3.9' fill='%232f7d64'/><circle cx='40' cy='34' r='3.6' fill='%232f7d64'/><path d='M23.5 44.5c0-4.2 3.8-7.4 8.5-7.4s8.5 3.2 8.5 7.4c0 3.2-2.6 5.1-5.4 5.1-1.6 0-2.3-.6-3.1-.6s-1.5.6-3.1.6c-2.8 0-5.4-1.9-5.4-5.1z' fill='%232f7d64'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="app-header no-print">
+    <div class="header-inner">
+      <a href="#step-1" class="brand brand-link" id="brandHomeLink" aria-label="トップページ（基本設定）へ戻る">
+        <span class="brand-logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 29L32 11.5L54 29" stroke="#e07a5f" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M44 17V13.5" stroke="#e07a5f" stroke-width="4.4" stroke-linecap="round" />
+            <circle cx="22.5" cy="35.5" r="3.7" fill="#2f7d64" />
+            <circle cx="32" cy="31" r="4" fill="#2f7d64" />
+            <circle cx="41.5" cy="35.5" r="3.7" fill="#2f7d64" />
+            <circle cx="17.2" cy="43.2" r="3" fill="#2f7d64" />
+            <circle cx="46.8" cy="43.2" r="3" fill="#2f7d64" />
+            <path d="M22.5 46.8c0-4.6 4.2-8.1 9.5-8.1s9.5 3.5 9.5 8.1c0 3.5-2.8 5.6-6 5.6-1.8 0-2.6-.7-3.5-.7s-1.7.7-3.5.7c-3.2 0-6-2.1-6-5.6z" fill="#2f7d64" />
+          </svg>
+        </span>
+        <div class="brand-text-wrap">
+          <h1 class="brand-logo-title">
+            <span class="logo-omukae">おむかえ</span><span class="logo-navi">ナビ</span>
+            <span class="logo-en-tag">OMUKAE NAVI</span>
+          </h1>
+          <p class="brand-sub">保護猫・保護犬を迎えるおうちの AI安全チェック＆提出レポート</p>
+        </div>
+      </a>
+      <div class="header-right">
+        <span id="apiStatusBadge" class="status-pill loading">接続確認中...</span>
+      </div>
+    </div>
+
+    <nav class="stepper" aria-label="進行ステップ">
+      <button class="step-btn active" id="stepBtn-1" data-step="1">
+        <span class="step-top">
+          <span class="step-num">1</span>
+          <span class="step-state" aria-hidden="true"></span>
+        </span>
+        <span class="step-label">基本設定</span>
+      </button>
+      <button class="step-btn" id="stepBtn-2" data-step="2">
+        <span class="step-top">
+          <span class="step-num">2</span>
+          <span class="step-state" aria-hidden="true"></span>
+        </span>
+        <span class="step-label">写真チェック</span>
+      </button>
+      <button class="step-btn" id="stepBtn-3" data-step="3">
+        <span class="step-top">
+          <span class="step-num">3</span>
+          <span class="step-state" aria-hidden="true"></span>
+        </span>
+        <span class="step-label">AIヒアリング</span>
+      </button>
+      <button class="step-btn locked" id="stepBtn-4" data-step="4">
+        <span class="step-top">
+          <span class="step-num">4</span>
+          <span class="step-state" aria-hidden="true"><svg class="ui-icon icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+        </span>
+        <span class="step-label">提出レポート</span>
+      </button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- Step 1: Setup -->
+    <section id="step-1" class="step-panel active">
+      <div id="restoreBanner" class="restore-banner hidden">
+        <span>前回の入力内容を自動で復元しました。</span>
+        <button type="button" class="link-btn" id="clearSavedBtn">新しくやり直す</button>
+      </div>
+
+      <div class="hero-card">
+        <div class="hero-copy">
+          <div class="hero-badge">Google AI Challenge 2026</div>
+          <h2>事前訪問の負担を減らし、<br />安心してお迎えできるおうちづくりを。</h2>
+          <p class="hero-desc">
+            スマホでお部屋の写真を撮るだけで、<strong>Google Gemini</strong> が窓のロック・脱走リスク・ペットに危険な観葉植物などをやさしくチェック。自治体や保護団体へそのまま提出できる「事前確認レポート」を作成します。
+          </p>
+        </div>
+        <div class="hero-illust-wrap">
+          <img src="./images/hero-home.jpg?v=3" alt="日当たりの良いお部屋で安心してくつろぐ保護猫と保護犬のイラスト" />
+        </div>
+      </div>
+
+      <!-- はじめに（安心ガイド） -->
+      <section class="intro-guide" aria-label="はじめに">
+        <div class="intro-guide-head">
+          <h3>はじめに｜安心して使っていただくための3つのお約束</h3>
+          <span class="intro-time-pill">所要時間：約5〜10分</span>
+        </div>
+        <div class="intro-grid">
+          <div class="intro-item">
+            <strong>1. 合否を決めるAIではありません</strong>
+            <p>お迎え前に気をつけたいポイントに一緒に気づき、自治体・保護団体の職員さんの確認を助ける準備ガイドです。</p>
+          </div>
+          <div class="intro-item">
+            <strong>2. 写真のプライバシー保護</strong>
+            <p>お部屋の写真はAI診断とレポート作成だけに使われ、サーバーへの保存や外部公開はしません。表札や郵便物・お顔が写らないように撮るとさらに安心です。</p>
+          </div>
+          <div class="intro-item">
+            <strong>3. 順番に1歩ずつ進められます</strong>
+            <p>①基本設定 → ②写真（1箇所からOK） → ③5問チャット → ④PDFレポート作成の順に進みます。入力内容は自動で一時保存されます。</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="card">
+        <h3 class="section-title">1. お迎え予定のペットを選んでください</h3>
+        <div class="choice-grid two-col" id="petChoices">
+          <button type="button" class="choice-card pet-choice selected" data-pet="cat">
+            <div class="choice-illust-box">
+              <img src="./images/pet-cat.jpg?v=3" alt="保護猫のイラスト" class="choice-illust" />
+            </div>
+            <div class="choice-text">
+              <strong>保護猫</strong>
+              <small>窓ロック・網戸の脱走防止・有毒植物（ユリ等）を重点チェック</small>
+            </div>
+          </button>
+          <button type="button" class="choice-card pet-choice" data-pet="dog">
+            <div class="choice-illust-box">
+              <img src="./images/pet-dog.jpg?v=4" alt="保護犬のイラスト" class="choice-illust" />
+            </div>
+            <div class="choice-text">
+              <strong>保護犬</strong>
+              <small>誤飲防止・電気コード・飛び出し対策・落ち着ける環境をチェック</small>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">2. どこからお迎えする予定ですか？</h3>
+        <p class="helper-text">お迎え元に合わせて、AIが重視する安全ポイントを自動で調整します。</p>
+        <div class="choice-grid three-col" id="presetChoices">
+          <button type="button" class="choice-card selected" data-preset="standard">
+            <strong>自治体・動物愛護管理センター</strong>
+            <small>保健所や動物愛護管理センターなど。窓ロック・有毒植物・安全な飼育空間をバランスよく確認</small>
+          </button>
+          <button type="button" class="choice-card" data-preset="strict_cat">
+            <strong>民間の保護団体・保護カフェ</strong>
+            <small>譲渡会やボランティア団体など。玄関の二重対策・網戸ロック・ベランダ転落防止を特に重視</small>
+          </button>
+          <button type="button" class="choice-card" data-preset="personal">
+            <strong>個人の保護主さん・これから検討中</strong>
+            <small>知人からの譲り受けや、これから探す方向け。まず押さえたい基本の安全ポイントをやさしく確認</small>
+          </button>
+        </div>
+
+        <label class="option-check-card" id="residentPetCard" for="hasResidentPet">
+          <input type="checkbox" id="hasResidentPet" />
+          <div class="option-check-text">
+            <strong>先住ペットがいます（任意）</strong>
+            <small>お迎え初期に分けて過ごせる隔離スペース（ケージや別室）や、段階的な顔合わせ環境もあわせて確認します。</small>
+          </div>
+        </label>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">3. お名前・提出先（任意）</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="applicantName">応募者のお名前（ニックネーム可）</label>
+            <input type="text" id="applicantName" placeholder="例：大阪 太郎" />
+          </div>
+          <div class="form-group">
+            <label for="shelterName">提出予定のお迎え元（自治体・保護団体名など）</label>
+            <input type="text" id="shelterName" placeholder="例：大阪府動物愛護管理センター / 地域の保護猫団体" />
+          </div>
+        </div>
+      </div>
+
+      <div class="action-bar right">
+        <button type="button" class="btn primary large" id="toStep2Btn">
+          ステップ2：お部屋の写真チェックへ進む →
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 2: Photo AI Check -->
+    <section id="step-2" class="step-panel">
+      <div class="section-header">
+        <div>
+          <h2>ステップ2：お部屋の写真AIチェック</h2>
+          <p class="helper-text">
+            まずは気になる1箇所からでもOK！対策したあとに撮り直すと、ビフォー／アフターの成長記録もレポートに残せます。
+          </p>
+        </div>
+        <div class="photo-progress-box">
+          診断済み: <strong id="analyzedCount">0</strong> / 4 箇所
+        </div>
+      </div>
+
+      <div id="demoNotice" class="info-banner hidden">
+        現在 <strong>Web体験版モード</strong> で動作中です（サンプル写真・ご自身の写真どちらでも全4ステップとA4提出レポートをお試しいただけます。実際のGoogle Gemini画像診断は90秒デモ動画およびローカル版で動作します）。
+      </div>
+
+      <div class="areas-grid" id="areasGrid">
+        <!-- Populated by app.js -->
+      </div>
+
+      <div class="action-bar between">
+        <button type="button" class="btn secondary" data-goto="1">← 基本設定へ</button>
+        <button type="button" class="btn primary large" id="toStep3Btn">
+          ステップ3：AIやさしいヒアリングへ進む →
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 3: AI Hearing Chat -->
+    <section id="step-3" class="step-panel">
+      <div class="section-header">
+        <div>
+          <h2>ステップ3：AIやさしいヒアリング</h2>
+          <p class="helper-text">
+            職員さんが自宅訪問で聞く5つの項目を、案内役のAIがチャット形式で1つずつ確認します。
+          </p>
+        </div>
+        <div class="hearing-progress-wrap">
+          <div class="progress-label">確認進捗: <strong id="hearingProgressText">0 / 5</strong></div>
+          <div class="progress-track">
+            <div class="progress-fill" id="hearingProgressBar" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-card">
+        <div class="chat-messages" id="chatMessages">
+          <!-- Chat bubbles rendered here -->
+        </div>
+
+        <div class="quick-replies" id="quickReplies">
+          <!-- Tap chips rendered here -->
+        </div>
+
+        <form class="chat-input-bar" id="chatForm">
+          <input
+            type="text"
+            id="chatInput"
+            placeholder="回答を入力するか、上の候補ボタンをタップしてください..."
+            autocomplete="off"
+          />
+          <button type="submit" class="btn primary" id="chatSendBtn">送信</button>
+        </form>
+      </div>
+
+      <div class="action-bar between">
+        <button type="button" class="btn secondary" data-goto="2">← 写真チェックへ</button>
+        <button type="button" class="btn primary large" id="toStep4Btn">
+          ステップ4：提出用レポートを作成する →
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 4: Shelter Submission Report -->
+    <section id="step-4" class="step-panel">
+      <!-- 未完了時のやさしい順番案内（Gate） -->
+      <div id="reportGate" class="report-gate hidden no-print">
+        <div class="gate-head">
+          <img src="./images/navi-cat.jpg?v=4" alt="おむかえナビ" class="gate-avatar" />
+          <div>
+            <h3>レポート作成の前に、あと少し準備しましょう！</h3>
+            <p class="helper-text">
+              お部屋の写真とヒアリング内容がそろうと、自治体・保護団体に安心して提出できるレポートが完成します。
+            </p>
+          </div>
+        </div>
+
+        <div class="gate-checklist" id="gateChecklist">
+          <!-- Populated by app.js -->
+        </div>
+
+        <div class="gate-sample-area">
+          <span>アプリの見本だけ先に見たい場合：</span>
+          <button type="button" class="link-btn" id="previewSampleReportBtn">見本レポート（サンプル）をプレビューする</button>
+        </div>
+      </div>
+
+      <!-- レポート本体エリア -->
+      <div id="reportMainArea">
+        <div id="samplePreviewBanner" class="info-banner hidden no-print">
+          これは <strong>見本レポート（サンプル表示）</strong> です。ご自身のお部屋写真とヒアリングを入力すると、専用の提出用レポートに更新されます。
+          <button type="button" class="link-btn" id="exitSamplePreviewBtn" style="margin-left:8px;">ステップ2から入力する</button>
+        </div>
+
+        <div class="report-toolbar no-print">
+          <div>
+            <h2>ステップ4：チェック結果・提出用レポート</h2>
+            <p class="helper-text">まずはご本人向けガイドで内容を確認し、提出時にPDF保存・印刷できます。</p>
+          </div>
+          <div class="toolbar-actions">
+            <button type="button" class="btn secondary" id="regenerateReportBtn">レポートを再生成</button>
+            <button type="button" class="btn primary" id="printReportBtn">
+              <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>
+              提出用をPDF保存 / 印刷
+            </button>
+          </div>
+        </div>
+
+        <div class="report-tabs no-print" id="reportViewTabs" role="tablist" aria-label="レポート表示切替">
+          <button type="button" class="report-tab active" data-view="applicant" role="tab" aria-selected="true">
+            <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/><path d="M9.5 21v-6a2.5 2.5 0 0 1 5 0v6"/></svg>
+            おうち準備ガイド（ご本人向け）
+          </button>
+          <button type="button" class="report-tab" data-view="submission" role="tab" aria-selected="false">
+            <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+            自治体・保護団体 提出用プレビュー
+          </button>
+        </div>
+
+        <div id="reportLoading" class="loading-box hidden no-print">
+          <div class="spinner"></div>
+          <p>Gemini が写真とヒアリング内容をまとめて、レポートを作成しています...</p>
+        </div>
+
+        <article id="reportSheet" class="report-sheet view-applicant">
+          <!-- Populated by app.js -->
+        </article>
+
+        <div class="action-bar between no-print">
+          <button type="button" class="btn secondary" data-goto="3">← ヒアリングへ戻る</button>
+          <button type="button" class="btn secondary" id="resetAllBtn">最初からやり直す</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer no-print">
+    <p>おむかえナビ — Powered by Google Gemini（事前確認支援ツール：最終的な譲渡判断は自治体・保護団体が行います）</p>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
